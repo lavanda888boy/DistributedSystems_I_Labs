@@ -1,5 +1,5 @@
 -module(test).
--export([bench/2, bench_parallel/3]).
+-export([bench/2, bench_parallel/3, bench_aggregate/3]).
 
 bench(Host, Port) ->
     N = 100,
@@ -32,6 +32,23 @@ bench_parallel(Clients, Host, Port) ->
     ],
 
     collect_results(Pids, []).
+
+bench_aggregate(Clients, Host, Port) ->
+    T0 = erlang:system_time(micro_seconds),
+
+    bench_parallel(Clients, Host, Port),
+
+    T1 = erlang:system_time(micro_seconds),
+    TotalTime = (T1 - T0) / 1_000_000,
+    TotalReqs = Clients * 100,
+    RPS = TotalReqs / TotalTime,
+
+    io:format(
+        "~nAggregate (clients=~p)~nTotal requests: ~p~nWall time: ~p seconds~nAggregate requests/sec: ~p~n",
+        [Clients, TotalReqs, TotalTime, RPS]
+    ),
+
+    RPS.
 
 collect_results([], Results) ->
     Results;
