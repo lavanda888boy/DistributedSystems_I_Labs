@@ -53,7 +53,7 @@ iterate([{Node, N, Gateway} | Rest], Map, Table) ->
             false ->
                 Rest;
             {Node, Nodes} ->
-                update_nodes(Nodes, N, Node, Rest)
+                update_nodes(Nodes, N, Gateway, Rest)
         end,
 
     Table1 = [{Node, Gateway} | Table],
@@ -79,5 +79,5 @@ route(Node, Table) ->
         false ->
             notfound;
         {Node, Gateway} ->
-            Gateway
+            {ok, Gateway}
     end.

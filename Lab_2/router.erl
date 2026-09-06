@@ -34,8 +34,8 @@ router(Name, N, Hist, Intf, Table, Map) ->
         {status, From} ->
             From ! {status, {Name, N, Hist, Intf, Table, Map}},
             router(Name, N, Hist, Intf, Table, Map);
-        {links, Node, N, Links} ->
-            case history:update(Node, N, Hist) of
+        {links, Node, R, Links} ->
+            case history:update(Node, R, Hist) of
                 {new, Hist1} ->
                     interface:broadcast({links, Node, N, Links}, Intf),
                     Map1 = map:update(Node, Links, Map),
@@ -54,7 +54,7 @@ router(Name, N, Hist, Intf, Table, Map) ->
             io:format("~w: received message ~w ~n", [Name, Message]),
             router(Name, N, Hist, Intf, Table, Map);
         {route, To, From, Message} ->
-            io:format("~w: routing message (~w)", [Name, Message]),
+            io:format("~w: routing message (~w)~n", [Name, Message]),
 
             case dijkstra:route(To, Table) of
                 {ok, Gateway} ->
@@ -86,5 +86,5 @@ status(Node) ->
             io:format("History: ~w~n", [Hist]),
             io:format("Interfaces: ~w~n", [Intf]),
             io:format("Routing table: ~w~n", [Table]),
-            io:format("Map: ~w~n", [Map])
+            io:format("Map: ~w~n~n", [Map])
     end.

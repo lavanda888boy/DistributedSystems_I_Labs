@@ -11,7 +11,7 @@ update(Node, Links, Map) ->
         case Element of
             false ->
                 Map;
-            {Node, Links} ->
+            {Node, _OldLinks} ->
                 lists:keydelete(Node, 1, Map)
         end,
 
