@@ -4,7 +4,7 @@
 zero() ->
     0.
 
-inc(Name, T) ->
+inc(_, T) ->
     T1 = T + 1,
     T1.
 
@@ -29,5 +29,5 @@ update(Node, Time, Clock) ->
     Clock1.
 
 safe(Time, Clock) ->
-    Safe = lists:all(fun({_, T}) -> Time =< T end, Clock),
+    Safe = lists:all(fun({_, T}) -> leq(Time, T) end, Clock),
     Safe.
