@@ -1,24 +1,27 @@
 -module(log).
--export([start/1, stop/1]).
+-export([start/2, start/3, stop/1]).
 
-start(Nodes) ->
-    spawn_link(fun() -> init(Nodes) end).
+start(Nodes, TimeMod) ->
+    start(Nodes, TimeMod, none).
+
+start(Nodes, TimeMod, StatsPid) ->
+    spawn_link(fun() -> init(Nodes, TimeMod, StatsPid) end).
 
 stop(Logger) ->
     Logger ! stop.
 
-init(Nodes) ->
-    Clock = time:clock(Nodes),
+init(Nodes, TimeMod, StatsPid) ->
+    Clock = TimeMod:clock(Nodes),
     Queue = [],
-    loop(Clock, Queue).
+    loop(TimeMod, StatsPid, Clock, Queue).
 
-loop(Clock, Queue) ->
+loop(TimeMod, StatsPid, Clock, Queue) ->
     receive
         {log, From, Time, Msg} ->
-            Clock1 = time:update(From, Time, Clock),
+            Clock1 = TimeMod:update(From, Time, Clock),
             Queue1 = [{From, Time, Msg} | Queue],
-            Queue2 = process_message_queue(Clock1, Queue1),
-            loop(Clock1, Queue2);
+            Queue2 = process_message_queue(TimeMod, StatsPid, Clock1, Queue1),
+            loop(TimeMod, StatsPid, Clock1, Queue2);
         stop ->
             ok
     end.
@@ -26,20 +29,37 @@ loop(Clock, Queue) ->
 log(From, Time, Msg) ->
     io:format("log: ~w ~w ~p~n", [Time, From, Msg]).
 
-process_message_queue(Clock, Queue) ->
+process_message_queue(TimeMod, StatsPid, Clock, Queue) ->
     {Safe, Unsafe} =
         lists:partition(
             fun({_, Time, _}) ->
-                time:safe(Time, Clock)
+                TimeMod:safe(Time, Clock)
             end,
             Queue
         ),
+
+    Ordered = lists:sort(
+        fun({_, T1, _}, {_, T2, _}) -> TimeMod:leq(T1, T2) end,
+        Safe
+    ),
 
     lists:foreach(
         fun({From, Time, Msg}) ->
             log(From, Time, Msg)
         end,
-        Safe
+        Ordered
     ),
+
+    N = length(Unsafe),
+
+    case N of
+        0 -> ok;
+        _ -> io:format("holdback: size ~w~n", [N])
+    end,
+
+    case StatsPid of
+        none -> ok;
+        _ -> StatsPid ! {holdback, N}
+    end,
 
     Unsafe.

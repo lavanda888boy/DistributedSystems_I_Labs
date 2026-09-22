@@ -30,7 +30,7 @@ leq([{Name, Ti} | Rest], Time) ->
             if
                 Ti =< Tj ->
                     leq(Rest, Time);
-                false ->
+                true ->
                     false
             end;
         false ->
