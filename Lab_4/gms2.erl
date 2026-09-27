@@ -1,7 +1,8 @@
 -module(gms2).
--export([start/1, start/2, init/2, init/3]).
+-export([start/1, start/2, init/3, init/4]).
 
 -define(timeout, 1000).
+-define(arghh, 200).
 
 leader(Id, Master, Slaves, Group) ->
     receive
@@ -42,20 +43,39 @@ slave(Id, Master, Leader, Slaves, Group) ->
     end.
 
 start(Id) ->
+    Rnd = rand:uniform(1000),
     Self = self(),
-    {ok, spawn_link(fun() -> init(Id, Self) end)}.
+    {ok, spawn_link(fun() -> init(Id, Rnd, Self) end)}.
 
-init(Id, Master) ->
+init(Id, Rnd, Master) ->
+    rand:seed(exsplus, {Rnd, Rnd, Rnd}),
     leader(Id, Master, [], [Master]).
 
 start(Id, Grp) ->
+    Rnd = rand:uniform(1000),
     Self = self(),
-    {ok, spawn_link(fun() -> init(Id, Grp, Self) end)}.
+    {ok, spawn_link(fun() -> init(Id, Grp, Rnd, Self) end)}.
 
-bcast(_Id, Msg, Nodes) ->
-    lists:foreach(fun(Node) -> Node ! Msg end, Nodes).
+bcast(Id, Msg, Nodes) ->
+    lists:foreach(
+        fun(Node) ->
+            Node ! Msg,
+            crash(Id)
+        end,
+        Nodes
+    ).
 
-init(Id, Grp, Master) ->
+crash(Id) ->
+    case rand:uniform(?arghh) of
+        ?arghh ->
+            io:format("leader ~w: crash~n", [Id]),
+            exit(no_luck);
+        _ ->
+            ok
+    end.
+
+init(Id, Grp, Rnd, Master) ->
+    rand:seed(exsplus, {Rnd, Rnd, Rnd}),
     Self = self(),
     Grp ! {join, Master, Self},
 
