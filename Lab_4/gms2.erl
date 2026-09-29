@@ -2,7 +2,7 @@
 -export([start/1, start/2, init/3, init/4]).
 
 -define(timeout, 1000).
--define(arghh, 200).
+-define(arghh, 100).
 
 leader(Id, Master, Slaves, Group) ->
     receive
